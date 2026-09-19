@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { Globe } from '@/components/Globe';
 import { Panel, PanelHeader } from '@/components/Panel';
 import { Badge } from '@/components/Badge';
 import { StatusDot } from '@/components/StatusDot';
@@ -153,7 +152,6 @@ export function Dashboard({
   primeSuspect,
   events,
   onVesselClick,
-  onRunSim,
   onNavigate,
 }: DashboardProps) {
   const [selectedVessel, setSelectedVessel] = useState<Vessel | null>(null);
@@ -176,12 +174,16 @@ export function Dashboard({
     <div className="flex h-full overflow-hidden">
       {/* Main content */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* SECTION A: 3D Globe */}
-        <div className="relative h-[420px] glass-panel overflow-hidden">
-          <Globe vessels={vessels} primeSuspectName={primeName} onVesselClick={handleVesselClick} />
+        {/* SECTION A: Full-width Tactical Map */}
+        <div className="relative h-[550px] glass-panel overflow-hidden">
+          <TacticalMap
+            vessels={vessels}
+            primeSuspectName={primeName}
+            onVesselClick={handleVesselClick}
+          />
 
           {/* Overlay: top-left badge */}
-          <div className="absolute top-3 left-3 flex items-center gap-2 glass-panel px-3 py-1.5">
+          <div className="absolute top-3 left-3 flex items-center gap-2 glass-panel px-3 py-1.5 z-20 pointer-events-none">
             <StatusDot color="#FF4444" />
             <span className="text-xs font-semibold uppercase tracking-wider text-[#FF4444]">
               Live Investigation
@@ -189,13 +191,13 @@ export function Dashboard({
           </div>
 
           {/* Overlay: top-right case ID */}
-          <div className="absolute top-3 right-3 glass-panel px-3 py-1.5">
+          <div className="absolute top-3 right-16 glass-panel px-3 py-1.5 z-20 pointer-events-none">
             <span className="section-label">Case</span>
             <span className="metric-value text-xs text-[#00D4FF] ml-1.5">#SAG-2026-001</span>
           </div>
 
           {/* Overlay: bottom metric pills */}
-          <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-2 justify-center">
+          <div className="absolute bottom-14 left-3 right-3 flex flex-wrap gap-2 justify-center z-20 pointer-events-none">
             <MetricPill label="Active Fleet" value={`${fleetCount}`} color="#00D4FF" />
             <MetricPill label="Detected Spill" value={`${spillPct.toFixed(2)}%`} color="#FFA500" />
             <MetricPill label="Anomalies" value={`${anomalyCount || 8}`} color="#FF4444" />
@@ -208,7 +210,7 @@ export function Dashboard({
           <MetricCard
             label="Active Fleet"
             value={`${fleetCount}`}
-            subtitle="Singapore Strait"
+            subtitle="Arabian Sea"
             status="LIVE"
             statusColor="#00FF88"
           >
@@ -262,28 +264,8 @@ export function Dashboard({
           </MetricCard>
         </div>
 
-        {/* SECTION C: Data Grid */}
+        {/* SECTION C: Prime Suspect Panel (full width) */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-          {/* Tactical Map */}
-          <div className="lg:col-span-2 glass-panel p-0 overflow-hidden h-[400px]">
-            <PanelHeader
-              title="Tactical Map"
-              right={
-                <Badge color="cyan">
-                  <Radio size={10} /> LIVE
-                </Badge>
-              }
-            />
-            <div className="h-[calc(100%-44px)] p-2">
-              <TacticalMap
-                vessels={vessels}
-                primeSuspectName={primeName}
-                onVesselClick={handleVesselClick}
-              />
-            </div>
-          </div>
-
-          {/* Prime Suspect Panel */}
           <div className="glass-panel p-0 overflow-hidden flex flex-col">
             <PanelHeader
               title="Prime Suspect"
@@ -353,10 +335,7 @@ export function Dashboard({
               </div>
             </div>
           </div>
-        </div>
 
-        {/* SECTION D: Analysis Panels */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
           {/* U-Net++ Detection Model */}
           <div className="glass-panel p-4 space-y-3">
             <div className="flex items-center justify-between">
@@ -373,7 +352,6 @@ export function Dashboard({
                 <div className="metric-value text-lg text-[#FFA500]">0.77%</div>
               </div>
             </div>
-            {/* Training loss curve */}
             <div>
               <div className="section-label mb-1.5">Training Loss</div>
               <Sparkline
@@ -415,45 +393,45 @@ export function Dashboard({
               IoU overlap scores vs. satellite reference
             </div>
           </div>
+        </div>
 
-          {/* Data Sources */}
-          <div className="glass-panel p-4 space-y-3">
-            <div className="flex items-center justify-between">
-              <span className="section-label">Data Sources</span>
-              <Badge color="cyan">4 SOURCES</Badge>
-            </div>
-            <div className="space-y-2">
-              {[
-                { name: 'Sentinel-1 SAR', sub: 'Copernicus', status: 'ACTIVE', color: '#00FF88', icon: Satellite },
-                { name: 'Copernicus Marine', sub: 'Ocean currents', status: 'ACTIVE', color: '#00FF88', icon: Waves },
-                { name: 'ERA5 Wind', sub: 'ECMWF', status: 'ACTIVE', color: '#00FF88', icon: Wind },
-                { name: 'AISStream API', sub: `${totalVessels || 72} ships`, status: 'LIVE', color: '#00D4FF', icon: Radio },
-              ].map((src) => {
-                const Icon = src.icon;
-                return (
-                  <div
-                    key={src.name}
-                    className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-[rgba(0,212,255,0.03)] hover:bg-[rgba(0,212,255,0.06)] transition-colors"
-                  >
-                    <Icon size={14} className="text-muted shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="text-xs font-medium text-white truncate">{src.name}</div>
-                      <div className="text-[0.625rem] text-muted">{src.sub}</div>
-                    </div>
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      <StatusDot color={src.color} />
-                      <span className="text-[0.625rem] font-medium" style={{ color: src.color }}>
-                        {src.status}
-                      </span>
-                    </div>
+        {/* SECTION D: Data Sources */}
+        <div className="glass-panel p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <span className="section-label">Data Sources</span>
+            <Badge color="cyan">4 SOURCES</Badge>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2">
+            {[
+              { name: 'Sentinel-1 SAR', sub: 'Copernicus', status: 'ACTIVE', color: '#00FF88', icon: Satellite },
+              { name: 'Copernicus Marine', sub: 'Ocean currents', status: 'ACTIVE', color: '#00FF88', icon: Waves },
+              { name: 'ERA5 Wind', sub: 'ECMWF', status: 'ACTIVE', color: '#00FF88', icon: Wind },
+              { name: 'AISStream API', sub: `${totalVessels || 72} ships`, status: 'LIVE', color: '#00D4FF', icon: Radio },
+            ].map((src) => {
+              const Icon = src.icon;
+              return (
+                <div
+                  key={src.name}
+                  className="flex items-center gap-2.5 px-3 py-2 rounded-md bg-[rgba(0,212,255,0.03)] hover:bg-[rgba(0,212,255,0.06)] transition-colors"
+                >
+                  <Icon size={14} className="text-muted shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-xs font-medium text-white truncate">{src.name}</div>
+                    <div className="text-[0.625rem] text-muted">{src.sub}</div>
                   </div>
-                );
-              })}
-            </div>
-            <div className="flex items-center gap-1.5 pt-1 text-[0.625rem] text-muted">
-              <Database size={10} />
-              All data sources operational
-            </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <StatusDot color={src.color} />
+                    <span className="text-[0.625rem] font-medium" style={{ color: src.color }}>
+                      {src.status}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <div className="flex items-center gap-1.5 pt-1 text-[0.625rem] text-muted">
+            <Database size={10} />
+            All data sources operational
           </div>
         </div>
       </div>

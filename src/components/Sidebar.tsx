@@ -1,6 +1,5 @@
 import {
   LayoutDashboard,
-  Globe2,
   ScanEye,
   Crosshair,
   Ship,
@@ -14,7 +13,6 @@ import type { LucideIcon } from 'lucide-react';
 
 export type PageId =
   | 'dashboard'
-  | 'globe'
   | 'spill-detection'
   | 'origin'
   | 'vessels'
@@ -42,7 +40,6 @@ interface SidebarProps {
 export function Sidebar({ active, onNavigate, anomalyCount, alertCount }: SidebarProps) {
   const items: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-    { id: 'globe', label: '3D Globe Map', icon: Globe2 },
     { id: 'spill-detection', label: 'Spill Detection (SAR)', icon: ScanEye },
     { id: 'origin', label: 'Origin Reconstruction', icon: Crosshair },
     { id: 'vessels', label: 'Vessel Intelligence', icon: Ship, badge: anomalyCount },
@@ -91,7 +88,7 @@ export function Sidebar({ active, onNavigate, anomalyCount, alertCount }: Sideba
       <div className="px-3 pt-2 border-t border-cyan-dim">
         <div className="section-label mb-1">Case</div>
         <div className="metric-value text-xs text-[#00D4FF]">#SAG-2026-001</div>
-        <div className="text-[0.625rem] text-muted mt-0.5">Singapore Strait</div>
+        <div className="text-[0.625rem] text-muted mt-0.5">Arabian Sea</div>
       </div>
     </nav>
   );

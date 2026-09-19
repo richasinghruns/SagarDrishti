@@ -2,7 +2,6 @@ import { useState, useCallback } from 'react';
 import { CommandBar } from '@/components/CommandBar';
 import { Sidebar, type PageId } from '@/components/Sidebar';
 import { Dashboard } from '@/pages/Dashboard';
-import { GlobePage } from '@/pages/GlobePage';
 import { VesselIntelligence } from '@/pages/VesselIntelligence';
 import { VirtualSpill } from '@/pages/VirtualSpill';
 import { Evidence } from '@/pages/Evidence';
@@ -68,9 +67,6 @@ function App() {
               onRunSim={() => {}}
               onNavigate={handleNavigate}
             />
-          )}
-          {page === 'globe' && (
-            <GlobePage vessels={vessels} primeSuspectName={primeName} />
           )}
           {page === 'spill-detection' && <SpillDetection />}
           {page === 'origin' && <OriginReconstruction />}
