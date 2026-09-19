@@ -210,7 +210,7 @@ export function Dashboard({
           <MetricCard
             label="Active Fleet"
             value={`${fleetCount}`}
-            subtitle="Arabian Sea"
+            subtitle="Singapore Strait"
             status="LIVE"
             statusColor="#00FF88"
           >

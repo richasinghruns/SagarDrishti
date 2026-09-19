@@ -19,9 +19,9 @@ const LAYERS: { key: LayerKey; label: string; color: string }[] = [
   { key: 'wind', label: 'Wind', color: '#A855F7' },
 ];
 
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/bright';
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
-const SPILL_CENTER: [number, number] = [64.0, 18.0];
+const SPILL_CENTER: [number, number] = [103.8, 1.25];
 
 const OSM_FALLBACK_STYLE = {
   version: 8,
@@ -67,7 +67,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         container: containerRef.current!,
         style: styleUrl as maplibregl.StyleSpecification,
         center: SPILL_CENTER,
-        zoom: 5,
+        zoom: 9,
         attributionControl: false,
       });
 
@@ -90,7 +90,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         container: containerRef.current,
         style: MAP_STYLE,
         center: SPILL_CENTER,
-        zoom: 5,
+        zoom: 9,
         attributionControl: false,
       });
 
@@ -378,13 +378,12 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
               type: 'Polygon' as const,
               coordinates: [
                 [
-                  [63.85, 18.05],
-                  [63.95, 18.12],
-                  [64.1, 18.08],
-                  [64.15, 17.98],
-                  [64.08, 17.88],
-                  [63.92, 17.9],
-                  [63.85, 18.05],
+                  [103.78, 1.22],
+                  [103.84, 1.28],
+                  [103.88, 1.24],
+                  [103.85, 1.18],
+                  [103.79, 1.19],
+                  [103.78, 1.22],
                 ],
               ],
             },
@@ -449,10 +448,10 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
             geometry: {
               type: 'LineString' as const,
               coordinates: [
-                [63.6, 18.3],
-                [63.75, 18.2],
-                [63.9, 18.1],
-                [64.0, 18.0],
+                [103.72, 1.32],
+                [103.76, 1.30],
+                [103.79, 1.28],
+                [103.82, 1.25],
               ],
             },
           },
@@ -482,10 +481,10 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
               type: 'Polygon' as const,
               coordinates: [
                 [
-                  [64.0, 18.0],
-                  [63.97, 18.02],
-                  [63.97, 17.98],
-                  [64.0, 18.0],
+                  [103.82, 1.25],
+                  [103.805, 1.255],
+                  [103.805, 1.245],
+                  [103.82, 1.25],
                 ],
               ],
             },
@@ -504,8 +503,8 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       });
 
       // Origin zone circle
-      const originCenter: [number, number] = [63.6, 18.3];
-      const radius = 0.15;
+      const originCenter: [number, number] = [103.72, 1.32];
+      const radius = 0.015;
       const points: number[][] = [];
       for (let i = 0; i <= 64; i++) {
         const angle = (i / 64) * 2 * Math.PI;
@@ -552,8 +551,8 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       const lineFeatures: GeoJSON.Feature[] = [];
       for (let i = 0; i < 5; i++) {
         const coords: number[][] = [];
-        const baseLat = 17.5 + i * 0.3;
-        for (let lon = 62; lon <= 67; lon += 0.1) {
+        const baseLat = 1.0 + i * 0.08;
+        for (let lon = 103.3; lon <= 104.3; lon += 0.02) {
           coords.push([lon, baseLat + Math.sin(lon * 0.5 + i) * 0.15]);
         }
         lineFeatures.push({
@@ -579,8 +578,8 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       const windFeatures: GeoJSON.Feature[] = [];
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 6; j++) {
-          const lon = 62 + (i / 7) * 5;
-          const lat = 16 + (j / 5) * 4;
+          const lon = 103.3 + (i / 7) * 1.0;
+          const lat = 0.85 + (j / 5) * 0.8;
           windFeatures.push({
             type: 'Feature' as const,
             properties: {},
