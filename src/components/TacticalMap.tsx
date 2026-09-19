@@ -9,9 +9,34 @@ interface TacticalMapProps {
   onVesselClick?: (v: Vessel) => void;
 }
 
-const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 const MAP_CENTER: [number, number] = [103.8, 1.25];
 const MAP_ZOOM = 9;
+
+const OSM_RASTER_STYLE: maplibregl.StyleSpecification = {
+  version: 8,
+  sources: {
+    'osm-tiles': {
+      type: 'raster',
+      tiles: [
+        'https://a.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        'https://b.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+        'https://c.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',
+      ],
+      tileSize: 256,
+      attribution: '© OpenStreetMap contributors',
+      maxzoom: 19,
+    },
+  },
+  layers: [
+    {
+      id: 'osm-raster',
+      type: 'raster',
+      source: 'osm-tiles',
+      minzoom: 0,
+      maxzoom: 19,
+    },
+  ],
+};
 
 const VESSEL_LAYERS = [
   'vessels-normal',
@@ -38,7 +63,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: MAP_STYLE,
+      style: OSM_RASTER_STYLE,
       center: MAP_CENTER,
       zoom: MAP_ZOOM,
       attributionControl: false,

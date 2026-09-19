@@ -4,7 +4,7 @@ import { Badge } from '@/components/Badge';
 import { StatusDot } from '@/components/StatusDot';
 import { Donut } from '@/components/Donut';
 import { Sparkline } from '@/components/Sparkline';
-import { TacticalMap } from '@/components/TacticalMap';
+import { TacticalSeaView } from '@/components/TacticalSeaView';
 import { useCountUp } from '@/hooks/useCountUp';
 import type { Vessel, PrimeSuspectResponse } from '@/lib/api';
 import type { ActivityEvent } from '@/hooks/useDashboardData';
@@ -176,7 +176,7 @@ export function Dashboard({
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {/* SECTION A: Full-width Tactical Map */}
         <div className="relative h-[550px] glass-panel overflow-hidden">
-          <TacticalMap
+          <TacticalSeaView
             vessels={vessels}
             primeSuspectName={primeName}
             onVesselClick={handleVesselClick}
