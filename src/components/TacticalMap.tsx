@@ -19,10 +19,10 @@ const LAYERS: { key: LayerKey; label: string; color: string }[] = [
   { key: 'wind', label: 'Wind', color: '#A855F7' },
 ];
 
-const CARTO_API_KEY =
-  'eyJhbGciOiJIUzI1NiJ9.eyJhIjoiYWNfbXg1NzU1dzYiLCJqdGkiOiI0MThjNzBiOSJ9.9vU-qq_vpHmoB1gKQU1xlHsDdbAlfLUytPgfzLGQRBk';
+const MAP_STYLE = 'https://tiles.openfreemap.org/styles/liberty';
 
-const CARTO_STYLE_URL = `https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json?api_key=${CARTO_API_KEY}`;
+// Arabian Sea spill location
+const SPILL_CENTER: [number, number] = [64.0, 18.0];
 
 export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: TacticalMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -43,28 +43,21 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
 
     const map = new maplibregl.Map({
       container: containerRef.current,
-      style: CARTO_STYLE_URL,
-      center: [103.8, 1.25],
-      zoom: 9,
+      style: MAP_STYLE,
+      center: SPILL_CENTER,
+      zoom: 5,
       attributionControl: false,
-      transformRequest: (url, resourceType) => {
-        // Append API key to CARTO tile and style requests
-        if (url.includes('cartocdn.com') || url.includes('carto.com')) {
-          const sep = url.includes('?') ? '&' : '?';
-          return {
-            url: `${url}${sep}api_key=${CARTO_API_KEY}`,
-            headers: { Authorization: `Bearer ${CARTO_API_KEY}` },
-          };
-        }
-        return { url };
-      },
     });
 
     map.on('load', () => {
       setMapReady(true);
     });
 
-    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.on('error', (e) => {
+      console.error('MapLibre error:', e);
+    });
+
+    map.addControl(new maplibregl.NavigationControl({ showCompass: true }), 'top-right');
 
     mapRef.current = map;
 
@@ -81,32 +74,55 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
     if (!map || !mapReady) return;
 
     // Remove old sources/layers
-    ['vessels-normal', 'vessels-anomaly', 'vessels-prime', 'slick-fill', 'slick-outline', 'origin-fill', 'origin-outline', 'currents', 'wind'].forEach(
-      (id) => {
-        if (map.getLayer(id)) map.removeLayer(id);
-        if (map.getSource(id)) map.removeSource(id);
-      }
-    );
+    [
+      'vessels-normal',
+      'vessels-anomaly',
+      'vessels-prime',
+      'vessels-normal-labels',
+      'vessels-anomaly-labels',
+      'vessels-prime-labels',
+      'slick-fill',
+      'slick-outline',
+      'origin-fill',
+      'origin-outline',
+      'drift-trajectory',
+      'currents',
+      'wind',
+    ].forEach((id) => {
+      if (map.getLayer(id)) map.removeLayer(id);
+      if (map.getSource(id)) map.removeSource(id);
+    });
 
-    // AIS vessels
+    // AIS vessels — normal (teal)
     if (layers.ais) {
-      const normalFeatures = vessels
-        .filter((v) => !v.is_anomaly && v.anomaly_score <= 0.5 && v.name !== primeSuspectName && !v.is_prime_suspect)
+      const normalFeatures: GeoJSON.Feature[] = vessels
+        .filter(
+          (v) =>
+            !v.is_anomaly &&
+            v.anomaly_score <= 0.5 &&
+            v.name !== primeSuspectName &&
+            !v.is_prime_suspect
+        )
         .map((v) => ({
           type: 'Feature' as const,
           geometry: { type: 'Point' as const, coordinates: [v.lon, v.lat] },
           properties: { name: v.name, mmsi: v.mmsi, speed: v.speed },
         }));
 
-      const anomalyFeatures = vessels
-        .filter((v) => (v.is_anomaly || v.anomaly_score > 0.5) && v.name !== primeSuspectName && !v.is_prime_suspect)
+      const anomalyFeatures: GeoJSON.Feature[] = vessels
+        .filter(
+          (v) =>
+            (v.is_anomaly || v.anomaly_score > 0.5) &&
+            v.name !== primeSuspectName &&
+            !v.is_prime_suspect
+        )
         .map((v) => ({
           type: 'Feature' as const,
           geometry: { type: 'Point' as const, coordinates: [v.lon, v.lat] },
           properties: { name: v.name, mmsi: v.mmsi, speed: v.speed },
         }));
 
-      const primeFeatures = vessels
+      const primeFeatures: GeoJSON.Feature[] = vessels
         .filter((v) => v.is_prime_suspect || v.name === primeSuspectName)
         .map((v) => ({
           type: 'Feature' as const,
@@ -115,51 +131,58 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         }));
 
       if (normalFeatures.length > 0) {
-        map.addSource('vessels-normal', { type: 'geojson', data: { type: 'FeatureCollection', features: normalFeatures } });
+        map.addSource('vessels-normal', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection' as const, features: normalFeatures },
+        });
         map.addLayer({
           id: 'vessels-normal',
           type: 'circle',
           source: 'vessels-normal',
           paint: {
-            'circle-radius': 4,
-            'circle-color': '#00D4FF',
-            'circle-opacity': 0.8,
-            'circle-stroke-color': '#00D4FF',
+            'circle-radius': 5,
+            'circle-color': '#0FB9B1',
+            'circle-opacity': 0.85,
+            'circle-stroke-color': '#ffffff',
             'circle-stroke-width': 1,
           },
         });
       }
 
       if (anomalyFeatures.length > 0) {
-        map.addSource('vessels-anomaly', { type: 'geojson', data: { type: 'FeatureCollection', features: anomalyFeatures } });
+        map.addSource('vessels-anomaly', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection' as const, features: anomalyFeatures },
+        });
         map.addLayer({
           id: 'vessels-anomaly',
           type: 'circle',
           source: 'vessels-anomaly',
           paint: {
-            'circle-radius': 6,
-            'circle-color': '#FF4444',
+            'circle-radius': 7,
+            'circle-color': '#FF8C00',
             'circle-opacity': 0.9,
-            'circle-stroke-color': '#FF4444',
-            'circle-stroke-width': 2,
-            'circle-stroke-opacity': 0.4,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 1.5,
           },
         });
       }
 
       if (primeFeatures.length > 0) {
-        map.addSource('vessels-prime', { type: 'geojson', data: { type: 'FeatureCollection', features: primeFeatures } });
+        map.addSource('vessels-prime', {
+          type: 'geojson',
+          data: { type: 'FeatureCollection' as const, features: primeFeatures },
+        });
         map.addLayer({
           id: 'vessels-prime',
           type: 'circle',
           source: 'vessels-prime',
           paint: {
-            'circle-radius': 8,
+            'circle-radius': 9,
             'circle-color': '#FFD700',
             'circle-opacity': 1,
-            'circle-stroke-color': '#FFD700',
-            'circle-stroke-width': 3,
-            'circle-stroke-opacity': 0.5,
+            'circle-stroke-color': '#ffffff',
+            'circle-stroke-width': 2,
           },
         });
       }
@@ -169,7 +192,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         if (!map.getLayer(layerId)) return;
         map.on('mousemove', layerId, (e) => {
           if (e.features && e.features.length > 0) {
-            const props = e.features[0].properties;
+            const props = e.features[0].properties as { name: string };
             const vessel = vessels.find((v) => v.name === props.name);
             setHovered(vessel || null);
             map.getCanvas().style.cursor = 'pointer';
@@ -181,7 +204,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         });
         map.on('click', layerId, (e) => {
           if (e.features && e.features.length > 0 && onVesselClick) {
-            const props = e.features[0].properties;
+            const props = e.features[0].properties as { name: string };
             const vessel = vessels.find((v) => v.name === props.name);
             if (vessel) onVesselClick(vessel);
           }
@@ -189,9 +212,8 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       });
     }
 
-    // Satellite slick
+    // Satellite slick — red irregular polygon at Arabian Sea
     if (layers.slick) {
-      const slickCenter = [103.84, 1.26];
       const slickGeoJSON: GeoJSON.FeatureCollection = {
         type: 'FeatureCollection' as const,
         features: [
@@ -202,11 +224,13 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
               type: 'Polygon' as const,
               coordinates: [
                 [
-                  [slickCenter[0] - 0.05, slickCenter[1] - 0.03],
-                  [slickCenter[0] + 0.05, slickCenter[1] - 0.02],
-                  [slickCenter[0] + 0.06, slickCenter[1] + 0.03],
-                  [slickCenter[0] - 0.04, slickCenter[1] + 0.04],
-                  [slickCenter[0] - 0.05, slickCenter[1] - 0.03],
+                  [63.85, 18.05],
+                  [63.95, 18.12],
+                  [64.1, 18.08],
+                  [64.15, 17.98],
+                  [64.08, 17.88],
+                  [63.92, 17.9],
+                  [63.85, 18.05],
                 ],
               ],
             },
@@ -221,7 +245,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         source: 'slick-fill',
         paint: {
           'fill-color': '#FF4444',
-          'fill-opacity': 0.2,
+          'fill-opacity': 0.25,
         },
       });
       map.addLayer({
@@ -230,16 +254,47 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         source: 'slick-fill',
         paint: {
           'line-color': '#FF4444',
-          'line-width': 1.5,
-          'line-dasharray': [2, 2],
+          'line-width': 2,
         },
       });
     }
 
-    // Origin zone
+    // Drift trajectory — orange dashed line from origin to current spill
     if (layers.origin) {
-      const originCenter = [103.83, 1.27];
-      const radius = 0.015;
+      const driftGeoJSON: GeoJSON.FeatureCollection = {
+        type: 'FeatureCollection' as const,
+        features: [
+          {
+            type: 'Feature' as const,
+            properties: {},
+            geometry: {
+              type: 'LineString' as const,
+              coordinates: [
+                [63.6, 18.3],
+                [63.75, 18.2],
+                [63.9, 18.1],
+                [64.0, 18.0],
+              ],
+            },
+          },
+        ],
+      };
+
+      map.addSource('drift-trajectory', { type: 'geojson', data: driftGeoJSON });
+      map.addLayer({
+        id: 'drift-trajectory',
+        type: 'line',
+        source: 'drift-trajectory',
+        paint: {
+          'line-color': '#FF8C00',
+          'line-width': 2.5,
+          'line-dasharray': [3, 2],
+        },
+      });
+
+      // Origin zone circle
+      const originCenter: [number, number] = [63.6, 18.3];
+      const radius = 0.15;
       const points: number[][] = [];
       for (let i = 0; i <= 64; i++) {
         const angle = (i / 64) * 2 * Math.PI;
@@ -266,7 +321,7 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         source: 'origin-fill',
         paint: {
           'fill-color': '#FFD700',
-          'fill-opacity': 0.08,
+          'fill-opacity': 0.1,
         },
       });
       map.addLayer({
@@ -286,13 +341,20 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       const lineFeatures: GeoJSON.Feature[] = [];
       for (let i = 0; i < 5; i++) {
         const coords: number[][] = [];
-        const baseLat = 1.1 + i * 0.08;
-        for (let lon = 103.3; lon <= 104.3; lon += 0.02) {
-          coords.push([lon, baseLat + Math.sin(lon * 5 + i) * 0.01]);
+        const baseLat = 17.5 + i * 0.3;
+        for (let lon = 62; lon <= 67; lon += 0.1) {
+          coords.push([lon, baseLat + Math.sin(lon * 0.5 + i) * 0.15]);
         }
-        lineFeatures.push({ type: 'Feature' as const, properties: {}, geometry: { type: 'LineString' as const, coordinates: coords } });
+        lineFeatures.push({
+          type: 'Feature' as const,
+          properties: {},
+          geometry: { type: 'LineString' as const, coordinates: coords },
+        });
       }
-      map.addSource('currents', { type: 'geojson', data: { type: 'FeatureCollection' as const, features: lineFeatures } });
+      map.addSource('currents', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection' as const, features: lineFeatures },
+      });
       map.addLayer({
         id: 'currents',
         type: 'line',
@@ -306,16 +368,25 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
       const windFeatures: GeoJSON.Feature[] = [];
       for (let i = 0; i < 8; i++) {
         for (let j = 0; j < 6; j++) {
-          const lon = 103.3 + (i / 7) * 1.0;
-          const lat = 0.85 + (j / 5) * 0.8;
+          const lon = 62 + (i / 7) * 5;
+          const lat = 16 + (j / 5) * 4;
           windFeatures.push({
             type: 'Feature' as const,
             properties: {},
-            geometry: { type: 'LineString' as const, coordinates: [[lon, lat], [lon + 0.02, lat + 0.008]] },
+            geometry: {
+              type: 'LineString' as const,
+              coordinates: [
+                [lon, lat],
+                [lon + 0.3, lat + 0.15],
+              ],
+            },
           });
         }
       }
-      map.addSource('wind', { type: 'geojson', data: { type: 'FeatureCollection' as const, features: windFeatures } });
+      map.addSource('wind', {
+        type: 'geojson',
+        data: { type: 'FeatureCollection' as const, features: windFeatures },
+      });
       map.addLayer({
         id: 'wind',
         type: 'line',
@@ -350,9 +421,60 @@ export function TacticalMap({ vessels, primeSuspectName, onVesselClick }: Tactic
         ))}
       </div>
 
+      {/* Legend */}
+      <div className="absolute bottom-3 left-3 glass-panel px-3 py-2 z-10 space-y-1.5">
+        <div className="section-label mb-1">Legend</div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-sm bg-[#FF4444] border border-[#FF4444]" />
+          <span className="text-[0.625rem] text-white/80">Detected Spill</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <svg width="12" height="3" className="shrink-0">
+            <line
+              x1="0"
+              y1="1.5"
+              x2="12"
+              y2="1.5"
+              stroke="#FF8C00"
+              strokeWidth="2"
+              strokeDasharray="3 2"
+            />
+          </svg>
+          <span className="text-[0.625rem] text-white/80">Drift Trajectory</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-[#0FB9B1] border border-white" />
+          <span className="text-[0.625rem] text-white/80">Vessel (Normal)</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="w-3 h-3 rounded-full bg-[#FF8C00] border border-white" />
+          <span className="text-[0.625rem] text-white/80">Vessel (Suspicious)</span>
+        </div>
+      </div>
+
+      {/* Scale bar */}
+      <div className="absolute bottom-3 right-12 z-10 glass-panel px-2.5 py-1.5">
+        <div className="flex items-center gap-2">
+          <div className="flex flex-col items-center">
+            <div className="w-16 h-0.5 bg-white/60" />
+            <div className="flex justify-between w-16">
+              <div className="w-px h-1.5 bg-white/60" />
+              <div className="w-px h-1.5 bg-white/60" />
+            </div>
+          </div>
+          <span className="metric-value text-[0.625rem] text-white/80">100 km</span>
+        </div>
+      </div>
+
+      {/* Compass */}
+      <div className="absolute top-3 right-14 z-10 glass-panel w-8 h-8 flex items-center justify-center rounded-full">
+        <span className="text-xs font-bold text-[#00D4FF]">N</span>
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-0 h-0 border-l-[4px] border-l-transparent border-r-[4px] border-r-transparent border-b-[6px] border-b-[#00D4FF]" />
+      </div>
+
       {/* Hover tooltip */}
       {hovered && (
-        <div className="absolute pointer-events-none glass-panel px-2.5 py-1.5 text-xs z-20 left-1/2 bottom-3">
+        <div className="absolute pointer-events-none glass-panel px-2.5 py-1.5 text-xs z-20 left-1/2 -translate-x-1/2 top-12">
           <div className="font-semibold text-white">{hovered.name}</div>
           <div className="text-muted text-[0.625rem]">
             MMSI {hovered.mmsi} · {hovered.speed} kn
