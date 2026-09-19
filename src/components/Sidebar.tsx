@@ -17,6 +17,7 @@ export type PageId =
   | 'origin'
   | 'vessels'
   | 'virtual-spill'
+  | 'scenario-builder'
   | 'evidence'
   | 'prediction'
   | 'alerts'
@@ -28,6 +29,7 @@ interface NavItem {
   icon: LucideIcon;
   badge?: number;
   goldStar?: boolean;
+  isNew?: boolean;
 }
 
 interface SidebarProps {
@@ -44,6 +46,7 @@ export function Sidebar({ active, onNavigate, anomalyCount, alertCount }: Sideba
     { id: 'origin', label: 'Origin Reconstruction', icon: Crosshair },
     { id: 'vessels', label: 'Vessel Intelligence', icon: Ship, badge: anomalyCount },
     { id: 'virtual-spill', label: 'Virtual Spill Test', icon: FlaskConical, goldStar: true },
+    { id: 'scenario-builder', label: 'Scenario Builder', icon: FlaskConical, isNew: true },
     { id: 'evidence', label: 'Evidence & Attribution', icon: Scale },
     { id: 'prediction', label: 'Future Prediction', icon: TrendingUp },
     { id: 'alerts', label: 'Alerts', icon: Bell, badge: alertCount },
@@ -70,6 +73,11 @@ export function Sidebar({ active, onNavigate, anomalyCount, alertCount }: Sideba
               <Icon size={16} className="shrink-0" />
               <span className="flex-1 truncate">{item.label}</span>
               {item.goldStar && <span className="text-[#FFD700] text-xs">★</span>}
+              {item.isNew && (
+                <span className="px-1.5 py-0.5 rounded text-[0.5625rem] font-bold bg-[rgba(168,85,247,0.15)] text-[#A855F7] border border-[rgba(168,85,247,0.3)]">
+                  NEW
+                </span>
+              )}
               {item.badge !== undefined && item.badge > 0 && (
                 <span
                   className={`px-1.5 py-0.5 rounded text-[0.625rem] font-bold ${

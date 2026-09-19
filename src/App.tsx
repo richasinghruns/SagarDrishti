@@ -4,6 +4,7 @@ import { Sidebar, type PageId } from '@/components/Sidebar';
 import { Dashboard } from '@/pages/Dashboard';
 import { VesselIntelligence } from '@/pages/VesselIntelligence';
 import { VirtualSpill } from '@/pages/VirtualSpill';
+import { ScenarioBuilder } from '@/pages/ScenarioBuilder';
 import { Evidence } from '@/pages/Evidence';
 import { FuturePrediction } from '@/pages/FuturePrediction';
 import { SpillDetection } from '@/pages/SpillDetection';
@@ -76,6 +77,7 @@ function App() {
           {page === 'virtual-spill' && (
             <VirtualSpill vessels={vessels} primeSuspectName={primeName} />
           )}
+          {page === 'scenario-builder' && <ScenarioBuilder />}
           {page === 'evidence' && <Evidence />}
           {page === 'prediction' && <FuturePrediction />}
           {page === 'alerts' && <Alerts events={events} />}
